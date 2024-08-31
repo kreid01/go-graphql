@@ -1,0 +1,53 @@
+type Query {
+	message(id:ID!): Message 
+	messages: [Message!]!
+}
+
+type Mutation {
+	postMessage(input: MessageInput!): Message!
+	postChannel(input: ChannelInput!): Channel!
+}
+
+type Subscription {
+	chatMessage: [Message]!
+	channel(id: ID!): Channel!
+}
+
+type Channel {
+	id: ID!
+	name: String
+	messagesConnection(first: Int = 20, after: ID): MessageConnection
+}
+
+type Message {
+	id: ID!
+	content: String!
+	user: String!
+	date: String!
+}
+
+input ChannelInput {
+	name: String!
+}
+
+input MessageInput {
+	content: String!
+	user :String!
+	date: String!
+}
+
+type MessageEdge {
+	cursor: String!
+	node: Message!
+}
+
+type MessageConnection {
+	edges: [MessageEdge!]!
+	pageInfo:PageInfo!        
+}
+
+type PageInfo {
+	startCursor: String!
+	endCursor: String!
+	HasNextPage: Boolean!
+}
