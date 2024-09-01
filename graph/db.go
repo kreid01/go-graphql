@@ -18,10 +18,10 @@ func Connect() *pg.DB {
 
 	db := pg.Connect(opt)
 	
-  //	err = createSchema(db)
-//	  if err != nil {
-  //      panic(err)
-   // }
+//  	err = recreateSchema(db)
+///	  if err != nil {
+ //   panic(err)
+ // }
 
 	var n int
 	_, err = db.QueryOne(pg.Scan(&n), "SELECT 1")
@@ -35,22 +35,30 @@ func Connect() *pg.DB {
 }
 
 
-func createSchema(db *pg.DB) error {
+func recreateSchema(db *pg.DB) error {
 	models := []interface{}{
 		(*model.Message)(nil),
+		(*model.Channel)(nil),
 	}
 
-	 for _, model := range models {
-        	err := db.Model(model).CreateTable(
-		&orm.CreateTableOptions{
-        	    Temp: false,
-        	})
-        if err != nil {
-            return err
-        }
-    }
-	
+	for _, model := range models {
+		// First, drop the existing table if it exists
+		err := db.Model(model).DropTable(&orm.DropTableOptions{
+			IfExists: true,
+			Cascade:  true, // Drop dependent objects as well
+		})
+		if err != nil {
+			return err
+		}
+
+		// Then, create the table
+		err = db.Model(model).CreateTable(&orm.CreateTableOptions{
+			Temp: false,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
-
-

@@ -3,9 +3,9 @@
 package model
 
 type Channel struct {
-	ID                 string             `json:"id"`
-	Name               *string            `json:"name,omitempty"`
-	MessagesConnection *MessageConnection `json:"messagesConnection,omitempty"`
+	ID       string     `json:"id"`
+	Name     *string    `json:"name,omitempty"`
+	Messages []*Message `json:"messages"`
 }
 
 type ChannelInput struct {
@@ -13,35 +13,22 @@ type ChannelInput struct {
 }
 
 type Message struct {
-	ID      string `json:"id"`
-	Content string `json:"content"`
-	User    string `json:"user"`
-	Date    string `json:"date"`
-}
-
-type MessageConnection struct {
-	Edges    []*MessageEdge `json:"edges"`
-	PageInfo *PageInfo      `json:"pageInfo"`
-}
-
-type MessageEdge struct {
-	Cursor string   `json:"cursor"`
-	Node   *Message `json:"node"`
+	ID        string   `json:"id"`
+	Content   string   `json:"content"`
+	User      string   `json:"user"`
+	Date      string   `json:"date"`
+	Channel   *Channel `json:"channel"`
+	ChannelID int      `json:"channelId"`
 }
 
 type MessageInput struct {
-	Content string `json:"content"`
-	User    string `json:"user"`
-	Date    string `json:"date"`
+	Content   string `json:"content"`
+	User      string `json:"user"`
+	Date      string `json:"date"`
+	ChannelID int    `json:"channelId"`
 }
 
 type Mutation struct {
-}
-
-type PageInfo struct {
-	StartCursor string `json:"startCursor"`
-	EndCursor   string `json:"endCursor"`
-	HasNextPage bool   `json:"HasNextPage"`
 }
 
 type Query struct {

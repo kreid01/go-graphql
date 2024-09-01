@@ -15,9 +15,10 @@ import (
 // PostMessage is the resolver for the postMessage field.
 func (r *mutationResolver) PostMessage(ctx context.Context, input model.MessageInput) (*model.Message, error) {
 	message := &model.Message{
-		User:    input.User,
-		Date:    input.Date,
-		Content: input.Content,
+		User:      input.User,
+		Date:      input.Date,
+		Content:   input.Content,
+		ChannelID: input.ChannelID,
 	}
 
 	count, err := r.DB.Model(message).Count()
@@ -35,8 +36,15 @@ func (r *mutationResolver) PostMessage(ctx context.Context, input model.MessageI
 
 	r.ChatMessages = append(r.ChatMessages, message)
 
-	for _, observer := range r.ChatObservers {
-		observer <- r.ChatMessages
+	for channelIdStr, observer := range r.ChatObservers {
+		channelId, err := strconv.Atoi(channelIdStr)
+		if err != nil {
+			continue
+		}
+
+		if channelId == message.ChannelID {
+			observer <- r.ChatMessages
+		}
 	}
 
 	return message, nil
@@ -44,7 +52,24 @@ func (r *mutationResolver) PostMessage(ctx context.Context, input model.MessageI
 
 // PostChannel is the resolver for the postChannel field.
 func (r *mutationResolver) PostChannel(ctx context.Context, input model.ChannelInput) (*model.Channel, error) {
-	panic(fmt.Errorf("not implemented: PostChannel - postChannel"))
+	channel := &model.Channel{
+		Name: &input.Name,
+	}
+
+	count, err := r.DB.Model(channel).Count()
+	if err != nil {
+
+		return nil, fmt.Errorf("failed to count existing messages: %v", err)
+	}
+
+	channel.ID = strconv.Itoa(count + 1)
+
+	_, err = r.DB.Model(channel).Insert()
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert message: %v", err)
+	}
+
+	return channel, nil
 }
 
 // Message is the resolver for the message field.
@@ -71,14 +96,60 @@ func (r *queryResolver) Messages(ctx context.Context) ([]*model.Message, error) 
 	return messages, nil
 }
 
-// ChatMessage is the resolver for the chatMessage field.
-func (r *subscriptionResolver) ChatMessage(ctx context.Context) (<-chan []*model.Message, error) {
-	panic(fmt.Errorf("not implemented: ChatMessage - chatMessage"))
+// Channel is the resolver for the channel field.
+func (r *queryResolver) Channel(ctx context.Context, id string, page *int, pageSize *int) (*model.Channel, error) {
+    channel := &model.Channel{ID: id}
+
+    // Fetch the channel
+    err := r.DB.Model(channel).WherePK().Select()
+    if err != nil {
+        return nil, fmt.Errorf("not found")
+    }
+
+    // Fetch messages with proper ordering
+    var messages []*model.Message
+    query := r.DB.Model(&messages).Where("channel_id = ?", id).OrderExpr("CAST(id AS INTEGER) DESC")
+
+ //   for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
+  //      messages[i], messages[j] = messages[j], messages[i]
+ //   }
+
+    if page != nil && pageSize != nil {
+        offset := (*page - 1) * (*pageSize)
+        query = query.Offset(offset).Limit(*pageSize)
+    }
+
+
+    err = query.Select()
+    if err != nil {
+        return nil, fmt.Errorf("failed to fetch messages: %v", err)
+    }
+
+    
+
+    // Assign messages to the channel
+    channel.Messages = messages
+
+    return channel, nil
 }
 
-// Channel is the resolver for the channel field.
-func (r *subscriptionResolver) Channel(ctx context.Context, id string) (<-chan *model.Channel, error) {
-	panic(fmt.Errorf("not implemented: Channel - channel"))
+// Messages is the resolver for the messages field.
+func (r *subscriptionResolver) Messages(ctx context.Context, channelID string) (<-chan []*model.Message, error) {
+	msgs := make(chan []*model.Message, 1)
+
+	r.ChatMessages = []*model.Message{}
+	r.ChatObservers = make(map[string]chan []*model.Message)
+
+	r.ChatObservers[channelID] = msgs
+	r.ChatObservers[channelID] <- r.ChatMessages
+
+	go func() {
+		<-ctx.Done()
+		close(msgs)
+		delete(r.ChatObservers, channelID)
+	}()
+
+	return msgs, nil
 }
 
 // Mutation returns MutationResolver implementation.

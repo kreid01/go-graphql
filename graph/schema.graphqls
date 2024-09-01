@@ -1,6 +1,10 @@
+directive @relation(fields: [String], references: [String]) on FIELD_DEFINITION
+
+
 type Query {
 	message(id:ID!): Message 
 	messages: [Message!]!
+	channel(id: ID!, page: Int = 1, pageSize: Int = 20): Channel!
 }
 
 type Mutation {
@@ -9,14 +13,13 @@ type Mutation {
 }
 
 type Subscription {
-	chatMessage: [Message]!
-	channel(id: ID!): Channel!
+	messages(channelId: ID!): [Message]!
 }
 
 type Channel {
 	id: ID!
 	name: String
-	messagesConnection(first: Int = 20, after: ID): MessageConnection
+	messages: [Message]!
 }
 
 type Message {
@@ -24,6 +27,8 @@ type Message {
 	content: String!
 	user: String!
 	date: String!
+	channel : Channel! @relation(fields: [channelId], references: [id])
+	channelId: Int!
 }
 
 input ChannelInput {
@@ -34,20 +39,7 @@ input MessageInput {
 	content: String!
 	user :String!
 	date: String!
+	channelId: Int!
 }
 
-type MessageEdge {
-	cursor: String!
-	node: Message!
-}
 
-type MessageConnection {
-	edges: [MessageEdge!]!
-	pageInfo:PageInfo!        
-}
-
-type PageInfo {
-	startCursor: String!
-	endCursor: String!
-	HasNextPage: Boolean!
-}
