@@ -8,6 +8,11 @@ type Channel struct {
 	Messages []*Message `json:"messages"`
 }
 
+type ChannelConnection struct {
+	Channel *Channel `json:"channel"`
+	HasMore bool     `json:"hasMore"`
+}
+
 type ChannelInput struct {
 	Name string `json:"name"`
 }

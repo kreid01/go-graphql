@@ -97,41 +97,41 @@ func (r *queryResolver) Messages(ctx context.Context) ([]*model.Message, error) 
 }
 
 // Channel is the resolver for the channel field.
-func (r *queryResolver) Channel(ctx context.Context, id string, page *int, pageSize *int) (*model.Channel, error) {
+// Channel is the resolver for the channel field.
+func (r *queryResolver) Channel(ctx context.Context, id string, page *int, pageSize *int) (*model.ChannelConnection, error) {
     channel := &model.Channel{ID: id}
 
-    // Fetch the channel
     err := r.DB.Model(channel).WherePK().Select()
     if err != nil {
         return nil, fmt.Errorf("not found")
     }
 
-    // Fetch messages with proper ordering
     var messages []*model.Message
     query := r.DB.Model(&messages).Where("channel_id = ?", id).OrderExpr("CAST(id AS INTEGER) DESC")
-
- //   for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
-  //      messages[i], messages[j] = messages[j], messages[i]
- //   }
 
     if page != nil && pageSize != nil {
         offset := (*page - 1) * (*pageSize)
         query = query.Offset(offset).Limit(*pageSize)
     }
 
-
     err = query.Select()
     if err != nil {
         return nil, fmt.Errorf("failed to fetch messages: %v", err)
     }
 
-    
+    count, err := r.DB.Model(&messages).Count()
+    var hasMore = (count - (*page * *pageSize)) > 0
 
-    // Assign messages to the channel
     channel.Messages = messages
 
-    return channel, nil
+    channelConnection := &model.ChannelConnection{
+        Channel: channel,
+        HasMore: hasMore,
+    }
+
+    return channelConnection, nil
 }
+
 
 // Messages is the resolver for the messages field.
 func (r *subscriptionResolver) Messages(ctx context.Context, channelID string) (<-chan []*model.Message, error) {

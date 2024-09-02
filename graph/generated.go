@@ -56,6 +56,11 @@ type ComplexityRoot struct {
 		Name     func(childComplexity int) int
 	}
 
+	ChannelConnection struct {
+		Channel func(childComplexity int) int
+		HasMore func(childComplexity int) int
+	}
+
 	Message struct {
 		Channel   func(childComplexity int) int
 		ChannelID func(childComplexity int) int
@@ -88,7 +93,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Message(ctx context.Context, id string) (*model.Message, error)
 	Messages(ctx context.Context) ([]*model.Message, error)
-	Channel(ctx context.Context, id string, page *int, pageSize *int) (*model.Channel, error)
+	Channel(ctx context.Context, id string, page *int, pageSize *int) (*model.ChannelConnection, error)
 }
 type SubscriptionResolver interface {
 	Messages(ctx context.Context, channelID string) (<-chan []*model.Message, error)
@@ -133,6 +138,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.Name(childComplexity), true
+
+	case "ChannelConnection.channel":
+		if e.complexity.ChannelConnection.Channel == nil {
+			break
+		}
+
+		return e.complexity.ChannelConnection.Channel(childComplexity), true
+
+	case "ChannelConnection.hasMore":
+		if e.complexity.ChannelConnection.HasMore == nil {
+			break
+		}
+
+		return e.complexity.ChannelConnection.HasMore(childComplexity), true
 
 	case "Message.channel":
 		if e.complexity.Message.Channel == nil {
@@ -694,6 +713,102 @@ func (ec *executionContext) fieldContext_Channel_messages(_ context.Context, fie
 				return ec.fieldContext_Message_channelId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelConnection_channel(ctx context.Context, field graphql.CollectedField, obj *model.ChannelConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ChannelConnection_channel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Channel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Channel)
+	fc.Result = res
+	return ec.marshalNChannel2ᚖkreidᚗcomᚋgraphlᚑgoᚋgraphᚋmodelᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ChannelConnection_channel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Channel_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Channel_name(ctx, field)
+			case "messages":
+				return ec.fieldContext_Channel_messages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Channel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChannelConnection_hasMore(ctx context.Context, field graphql.CollectedField, obj *model.ChannelConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ChannelConnection_hasMore(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasMore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ChannelConnection_hasMore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChannelConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1281,9 +1396,9 @@ func (ec *executionContext) _Query_channel(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Channel)
+	res := resTmp.(*model.ChannelConnection)
 	fc.Result = res
-	return ec.marshalNChannel2ᚖkreidᚗcomᚋgraphlᚑgoᚋgraphᚋmodelᚐChannel(ctx, field.Selections, res)
+	return ec.marshalNChannelConnection2ᚖkreidᚗcomᚋgraphlᚑgoᚋgraphᚋmodelᚐChannelConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_channel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1294,14 +1409,12 @@ func (ec *executionContext) fieldContext_Query_channel(ctx context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Channel_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Channel_name(ctx, field)
-			case "messages":
-				return ec.fieldContext_Channel_messages(ctx, field)
+			case "channel":
+				return ec.fieldContext_ChannelConnection_channel(ctx, field)
+			case "hasMore":
+				return ec.fieldContext_ChannelConnection_hasMore(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Channel", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ChannelConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -3432,6 +3545,50 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var channelConnectionImplementors = []string{"ChannelConnection"}
+
+func (ec *executionContext) _ChannelConnection(ctx context.Context, sel ast.SelectionSet, obj *model.ChannelConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, channelConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChannelConnection")
+		case "channel":
+			out.Values[i] = ec._ChannelConnection_channel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hasMore":
+			out.Values[i] = ec._ChannelConnection_hasMore(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var messageImplementors = []string{"Message"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *model.Message) graphql.Marshaler {
@@ -4038,6 +4195,20 @@ func (ec *executionContext) marshalNChannel2ᚖkreidᚗcomᚋgraphlᚑgoᚋgraph
 		return graphql.Null
 	}
 	return ec._Channel(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNChannelConnection2kreidᚗcomᚋgraphlᚑgoᚋgraphᚋmodelᚐChannelConnection(ctx context.Context, sel ast.SelectionSet, v model.ChannelConnection) graphql.Marshaler {
+	return ec._ChannelConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNChannelConnection2ᚖkreidᚗcomᚋgraphlᚑgoᚋgraphᚋmodelᚐChannelConnection(ctx context.Context, sel ast.SelectionSet, v *model.ChannelConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ChannelConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNChannelInput2kreidᚗcomᚋgraphlᚑgoᚋgraphᚋmodelᚐChannelInput(ctx context.Context, v interface{}) (model.ChannelInput, error) {
