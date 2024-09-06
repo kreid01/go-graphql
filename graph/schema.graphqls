@@ -4,12 +4,14 @@ directive @relation(fields: [String], references: [String]) on FIELD_DEFINITION
 type Query {
 	message(id:ID!): Message 
 	messages: [Message!]!
+	channels: [Channel!]!
 	channel(id: ID!, page: Int = 1, pageSize: Int = 20): ChannelConnection!
 }
 
 type Mutation {
 	postMessage(input: MessageInput!): Message!
 	postChannel(input: ChannelInput!): Channel!
+	deleteChannel(id: ID!): String 
 }
 
 type Subscription {

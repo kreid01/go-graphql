@@ -18,10 +18,10 @@ func Connect() *pg.DB {
 
 	db := pg.Connect(opt)
 	
-  	err = recreateSchema(db)
-	  if err != nil {
-    panic(err)
-  }
+  //	err = recreateSchema(db)
+//	  if err != nil {
+//	  panic(err)
+//  }
 
 	var n int
 	_, err = db.QueryOne(pg.Scan(&n), "SELECT 1")

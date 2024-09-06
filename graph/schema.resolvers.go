@@ -72,6 +72,17 @@ func (r *mutationResolver) PostChannel(ctx context.Context, input model.ChannelI
 	return channel, nil
 }
 
+// DeleteChannel is the resolver for the deleteChannel field.
+func (r *mutationResolver) DeleteChannel(ctx context.Context, id string) (*string, error) {
+	channel := &model.Channel{ID: id}
+	_, err := r.DB.Model(channel).WherePK().Delete()
+	if err != nil {
+		return nil, fmt.Errorf("Not found")
+	}
+
+	return nil, nil
+}
+
 // Message is the resolver for the message field.
 func (r *queryResolver) Message(ctx context.Context, id string) (*model.Message, error) {
 	message := &model.Message{ID: id}
@@ -96,42 +107,52 @@ func (r *queryResolver) Messages(ctx context.Context) ([]*model.Message, error) 
 	return messages, nil
 }
 
-// Channel is the resolver for the channel field.
-// Channel is the resolver for the channel field.
-func (r *queryResolver) Channel(ctx context.Context, id string, page *int, pageSize *int) (*model.ChannelConnection, error) {
-    channel := &model.Channel{ID: id}
+// Channels is the resolver for the channels field.
+func (r *queryResolver) Channels(ctx context.Context) ([]*model.Channel, error) {
+	var channels []*model.Channel
 
-    err := r.DB.Model(channel).WherePK().Select()
-    if err != nil {
-        return nil, fmt.Errorf("not found")
-    }
+	err := r.DB.Model(&channels).Select()
+	if err != nil {
+		return nil, err
+	}
 
-    var messages []*model.Message
-    query := r.DB.Model(&messages).Where("channel_id = ?", id).OrderExpr("CAST(id AS INTEGER) DESC")
-
-    if page != nil && pageSize != nil {
-        offset := (*page - 1) * (*pageSize)
-        query = query.Offset(offset).Limit(*pageSize)
-    }
-
-    err = query.Select()
-    if err != nil {
-        return nil, fmt.Errorf("failed to fetch messages: %v", err)
-    }
-
-    count, err := r.DB.Model(&messages).Count()
-    var hasMore = (count - (*page * *pageSize)) > 0
-
-    channel.Messages = messages
-
-    channelConnection := &model.ChannelConnection{
-        Channel: channel,
-        HasMore: hasMore,
-    }
-
-    return channelConnection, nil
+	return channels, nil
 }
 
+// Channel is the resolver for the channel field.
+func (r *queryResolver) Channel(ctx context.Context, id string, page *int, pageSize *int) (*model.ChannelConnection, error) {
+	channel := &model.Channel{ID: id}
+
+	err := r.DB.Model(channel).WherePK().Select()
+	if err != nil {
+		return nil, fmt.Errorf("not found")
+	}
+
+	var messages []*model.Message
+	query := r.DB.Model(&messages).Where("channel_id = ?", id).OrderExpr("CAST(id AS INTEGER) DESC")
+
+	if page != nil && pageSize != nil {
+		offset := (*page - 1) * (*pageSize)
+		query = query.Offset(offset).Limit(*pageSize)
+	}
+
+	err = query.Select()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch messages: %v", err)
+	}
+
+	count, err := r.DB.Model(&messages).Count()
+	var hasMore = (count - (*page * *pageSize)) > 0
+
+	channel.Messages = messages
+
+	channelConnection := &model.ChannelConnection{
+		Channel: channel,
+		HasMore: hasMore,
+	}
+
+	return channelConnection, nil
+}
 
 // Messages is the resolver for the messages field.
 func (r *subscriptionResolver) Messages(ctx context.Context, channelID string) (<-chan []*model.Message, error) {
